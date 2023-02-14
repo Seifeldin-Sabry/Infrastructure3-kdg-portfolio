@@ -24,19 +24,11 @@ checkTypes()
   fi
 }
 
-printBiggest()
+printSum()
 {
-  if [ $1 -gt $2 ];
-  then
-    echo $1
-  elif [ $1 -lt $2 ];
-  then
-    echo $2
-  else
-    echo "The numbers are equal."
-  fi
+  echo $(($1 + $2))
 }
 
 checkArgs "$numParamsPassed" "$E_WRONGARGS"
 checkTypes $*
-printBiggest $*
+printSum $*
