@@ -17,9 +17,8 @@ IFS='
 
 # check if --help is supplied
 if [ "$1" = "--help" ]; then
-  echo -e "Usage: supply file eg: 'nslookup.sh <file>'"
-  echo -e "Note: file must be supplied"
-  echo -e "Converts IP addresses to names"
+  echo -e "Usage: have an ips.txt file with IP addresses, eg: 'nslookup.sh in the same directory as ips.txt'"
+  echo -e "Extracts the names of the IP addresses"
   exit 1
 fi
 
