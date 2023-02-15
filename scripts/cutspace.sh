@@ -47,6 +47,7 @@ if [ "$1" = "--test" ]; then
   createTestFiles "$dir"
   fixFileNames "$dir"
   echo "Done"
+  unset IFS
   exit 0
 fi
 
