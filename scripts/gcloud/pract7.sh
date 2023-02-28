@@ -23,6 +23,12 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
   exit 0
 fi
 
+# check if gcloud is installed
+if ! command -v gcloud &> /dev/null; then
+  echo "gcloud could not be found please install it first"
+  exit 1
+fi
+
 #check if -d or -delete flag is passed
 if [[ "$1" == "-d" || "$1" == "-delete" ]]; then
   vms=$(gcloud compute instances list --format='table[no-heading](name)' --filter=${TARGET_TAGS})
