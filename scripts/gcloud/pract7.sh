@@ -29,7 +29,7 @@ if [[ "$1" == "-d" || "$1" == "-delete" ]]; then
   for vm in $vms; do
     gcloud compute instances delete "${vm}" --quiet
   done
-  gcloud compute firewall-rules describe "rocket-chat" >/dev/null  && echo "Deleting firewall rule..."  gcloud compute firewall-rules delete "rocket-chat" --quiet
+  gcloud compute firewall-rules describe "rocket-chat" >/dev/null  && echo "Deleting firewall rule..." && gcloud compute firewall-rules delete "rocket-chat" --quiet
   echo "VMs and firewall rule deleted"
   exit 0
 fi
