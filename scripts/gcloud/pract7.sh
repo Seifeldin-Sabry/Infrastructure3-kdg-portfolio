@@ -1,6 +1,12 @@
 #!/bin/bash
 
-VM_NAME="instance-$(date +%s)"  # add unique suffix to instance name
+# Author: Seifeldin Sabry
+
+# Function to create/delete a firewall rule and a VM instance
+# Usage: ./pract7.sh [-d | -delete] to delete all VMs and the firewall rule
+# Usage: ./pract7.sh to create a VM and a firewall rule with rocket chat installed
+
+VM_NAME="instance-$(date +%s)"
 PROJECT_ID="infra3-seifeldin-sabry"
 ZONE="europe-west1-b"
 MACHINE_TYPE="e2-medium"
@@ -9,6 +15,13 @@ IMAGE_PROJECT="ubuntu-os-cloud"
 TARGET_TAGS="chat"
 HTTP_RULE_NAME="rocket-chat"
 TARGET_PORT=tcp:3000
+
+# check if --help or -h flag is passed
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+  echo "Usage: ./pract7.sh [-d | -delete] to delete all VMs and the firewall rule"
+  echo "Usage: ./pract7.sh to create a VM and a firewall rule with rocket chat installed"
+  exit 0
+fi
 
 #check if -d or -delete flag is passed
 if [[ "$1" == "-d" || "$1" == "-delete" ]]; then
