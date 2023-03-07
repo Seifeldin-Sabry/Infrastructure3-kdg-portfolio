@@ -27,6 +27,10 @@ DB_STORAGE_SIZE=10
 # check if --help or -h flag is passed
 if [[ "$1" == "--help" || "$1" == "-h" ]]; then
   echo "Usage: create a VM that is connected to porstgres14 db"
+  echo "Parameters:"
+  echo "1) db_name: name of the database"
+  echo "2) db_user: name of the user"
+  echo "required"
   exit 0
 fi
 
@@ -67,10 +71,10 @@ gcloud compute instances create "${VM_NAME}" \
   --boot-disk-type=${DISK_TYPE} \
   --boot-disk-size=${DISK_SIZE} \
   --metadata startup-script="#!/bin/bash
-  	apt-get update && apt-get install -y postgresql-client postgresql"
+  	apt-get update && apt-get install -y postgresql-client"
 
 IP_ADDRESS_VM="$(gcloud compute instances list --format='table(EXTERNAL_IP)' --filter="name:${VM_NAME}" | tail -n1)/32"
-existing_authorised_networks="$(gcloud sql instances describe gcloud4-4 --format="json(settings.ipConfiguration.authorizedNetworks[].value)" | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")"
+existing_authorised_networks="$(gcloud sql instances describe ${DB_INSTANCE_NAME} --format="value(settings.ipConfiguration.authorizedNetworks.value)" | tr ';' ',')"
 
 for ip in ${existing_authorised_networks}; do
   if [[ -n "${ip}" ]]; then
