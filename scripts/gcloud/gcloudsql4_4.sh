@@ -23,10 +23,6 @@ DB_USER="$2"
 DB_INSTANCE_NAME="gcloud4-4"
 DB_STORAGE_SIZE=10
 
-read -rsp 'Enter password for the user:' USER_PASS
-
-echo ${USER_PASS}
-echo ${DB_USER}
 
 # check if --help or -h flag is passed
 if [[ "$1" == "--help" || "$1" == "-h" ]]; then
@@ -87,6 +83,7 @@ gcloud sql instances patch "${DB_INSTANCE_NAME}"  --authorized-networks="${IP_AD
 if gcloud sql users list --instance="${DB_INSTANCE_NAME}" --format="table(name)" | grep -q "${DB_USER}"; then
   echo "The user exists, skipping..."
 else
+  read -rsp 'Enter password for the user:' USER_PASS
   gcloud sql users create "${DB_USER}" --password="${USER_PASS}" --instance="${DB_INSTANCE_NAME}"
 fi
 
