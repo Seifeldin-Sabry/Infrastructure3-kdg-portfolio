@@ -91,7 +91,7 @@ else
   gcloud sql databases create "${DB_NAME}" --instance="${DB_INSTANCE_NAME}"
 fi
 
-echo "this is the command to connect to the VM"
+echo "this is the command to connect to the database from the VM"
 echo "======================================================"
 echo "ssh <username>@${COMMAND_IP_ADDRESS}"
 HOST_IP="$(gcloud sql instances describe ${DB_INSTANCE_NAME} --format="value(ipAddresses.ipAddress)" | awk -F ';' '{print $1}')"
