@@ -74,6 +74,7 @@ gcloud compute instances create "${VM_NAME}" \
   	apt-get update && apt-get install -y postgresql-client"
 
 IP_ADDRESS_VM="$(gcloud compute instances list --format='table(EXTERNAL_IP)' --filter="name:${VM_NAME}" | tail -n1)/32"
+COMMAND_IP_ADDRESS="${IP_ADDRESS_VM}"
 existing_authorised_networks="$(gcloud sql instances describe ${DB_INSTANCE_NAME} --format="value(settings.ipConfiguration.authorizedNetworks.value)" | tr ';' ',')"
 
 for ip in ${existing_authorised_networks}; do
@@ -96,3 +97,10 @@ if gcloud sql databases list --instance="${DB_INSTANCE_NAME}" --format="table(na
 else
   gcloud sql databases create "${DB_NAME}" --instance="${DB_INSTANCE_NAME}"
 fi
+
+echo "this is the command to connect to the VM"
+echo "======================================================"
+echo "ssh <username>@${COMMAND_IP_ADDRESS}"
+HOST_IP="$(gcloud sql instances describe ${DB_INSTANCE_NAME} --format="value(ipAddresses.ipAddress)" | awk -F ';' '{print $1}')"
+echo "psql --host=${HOST_IP} -d ${DB_NAME} -U ${DB_USER} -W"
+echo "======================================================"
