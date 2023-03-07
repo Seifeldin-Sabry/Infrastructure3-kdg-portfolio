@@ -76,12 +76,7 @@ gcloud compute instances create "${VM_NAME}" \
 IP_ADDRESS_VM="$(gcloud compute instances list --format='table(EXTERNAL_IP)' --filter="name:${VM_NAME}" | tail -n1)/32"
 COMMAND_IP_ADDRESS="${IP_ADDRESS_VM}"
 existing_authorised_networks="$(gcloud sql instances describe ${DB_INSTANCE_NAME} --format="value(settings.ipConfiguration.authorizedNetworks.value)" | tr ';' ',')"
-
-for ip in ${existing_authorised_networks}; do
-  if [[ -n "${ip}" ]]; then
-    IP_ADDRESS_VM="${IP_ADDRESS_VM},${ip}/32"
-  fi
-done
+IP_ADDRESS_VM="${existing_authorised_networks},${IP_ADDRESS_VM}"
 
 gcloud sql instances patch "${DB_INSTANCE_NAME}"  --authorized-networks="${IP_ADDRESS_VM}" --quiet > /dev/null 2>&1
 
