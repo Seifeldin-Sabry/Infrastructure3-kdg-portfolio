@@ -22,6 +22,12 @@ if [ "$1" = "--help" ]; then
   exit 1
 fi
 
+# check if nslookup is installed
+if ! [ -x "$(command -v nslookup)" ]; then
+  echo "Error: nslookup is not installed." >&2
+  exit 1
+fi
+
 regex="(name = )(.*)\."
 
 fun_nslookup()
