@@ -5,7 +5,6 @@
 
 
 VM_NAME="instance-$(date +%s)"
-PROJECT_ID="infra3-seifeldin-sabry"
 ZONE="europe-west1-b"
 MACHINE_TYPE="e2-small"
 IMAGE_FAMILY="ubuntu-2204-lts"
@@ -63,7 +62,6 @@ if ! gcloud sql instances describe "${DB_INSTANCE_NAME}" &> /dev/null; then
 fi
 
 gcloud compute instances create "${VM_NAME}" \
-  --project=${PROJECT_ID} \
   --zone=${ZONE} \
   --machine-type=${MACHINE_TYPE} \
   --image-family=${IMAGE_FAMILY} \
