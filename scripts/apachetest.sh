@@ -23,25 +23,33 @@
 #Perform the benchmark to test the web server:
 #ab -n 100 -kc 10 ${url}
 #Note: the url must end with a slash for ‘ab’.
-
+function error() {
+  echo "Error: $1" >&2
+}
 # to check if running as root
 if [ "$EUID" -ne 0 ]
-  then echo "Please run as root"
+  then error "Please run as root"
   exit 1
 fi
 
 # check if ab and curl are installed
 if ! [ -x "$(command -v ab)" ] || ! [ -x "$(command -v curl)" ]; then
-  echo "The programs ab/curl are required. Install them with ‘sudo apt install apache2-utils’ and ‘sudo apt install curl’." >&2
+  error "The programs ab/curl are required. Install them with 'sudo apt install apache2-utils' and 'sudo apt install curl'."
   exit 1
 fi
 
-# check if url is supplied
-url=${1:-"127.0.0.1"}
+# check if url is supplied, add / to end of url
+url="${1:-"127.0.0.1"}"
+
+# check if url ends with /
+if ! [[ "${url}" =~ ^.+/$ ]]; then
+  url="${url}/"
+  echo "url: ${url}"
+fi
 
 # check if url is reachable
 if ! curl -s --head  --request GET "${url}" | grep "200 OK" > /dev/null; then
-  echo "The url is not reachable."
+  error "The url is not reachable."
   exit 2
 fi
 
