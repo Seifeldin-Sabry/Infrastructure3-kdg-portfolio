@@ -54,8 +54,8 @@ function check_rule_exists {
   rule=$1
   port=$2
   if gcloud compute firewall-rules list | grep -E "\b${port}\b" >/dev/null; then
-    echo "Rule '${rule}' already exists"
-    TARGET_TAGS=$(gcloud compute firewall-rules describe "${rule}" --format='flattened(targetTags)' | awk '{print $2}')
+    echo "Rule '${rule}' already exists, appending target tags..."
+    TARGET_TAGS="$(gcloud compute firewall-rules describe "${rule}" --format='flattened(targetTags)' | awk '{print $2}') ${TARGET_TAGS}"
   else
     create_rule "${HTTP_RULE_NAME}" "${TARGET_TAGS}" "${TARGET_PORT}" "${PROJECT_ID}"
   fi

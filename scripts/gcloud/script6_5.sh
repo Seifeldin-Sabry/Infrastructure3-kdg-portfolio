@@ -26,20 +26,13 @@ if ! command -v gcloud &> /dev/null; then
   exit 1
 fi
 
+
 function create_rule {
   rule=$1
   tags=$2
   port=$3
   project=$4
-  gcloud compute firewall-rules create "${rule}" --project="${project}" --allow="${port}" --target-tags="${tags}"
-  echo "Rule '${HTTP_RULE_NAME}' created"
-}
-function create_rule {
-  rule=$1
-  tags=$2
-  port=$3
-  project=$4
-  gcloud compute firewall-rules create "${rule}" --project="${project}" --allow="${port}" --target-tags="${tags}"
+  gcloud compute firewall-rules create "${rule}" --allow="${port}" --target-tags="${tags}"
   echo "Rule '${rule}' created"
 }
 
@@ -57,29 +50,35 @@ function check_rule_exists {
   fi
 }
 
-check_rule_exists "ssl-rule-2" "ssl-rule-tag" "443" "${PROJECT_ID}"
-check_rule_exists "http-rule" "http-server" "80" "${PROJECT_ID}"
+    check_rule_exists "ssl-rule-2" "ssl-rule-tag" "443" "${PROJECT_ID}"
+    check_rule_exists "http-rule" "http-server" "80" "${PROJECT_ID}"
 
-gcloud compute instances create "${VM_NAME}" \
-  --zone=${ZONE} \
-  --machine-type=${MACHINE_TYPE} \
-  --image-family=${IMAGE_FAMILY} \
-  --image-project=${IMAGE_PROJECT} \
-  --boot-disk-type=${DISK_TYPE} \
-  --boot-disk-size=${DISK_SIZE} \
-  --tags=http-server,ssl-rule-tag \
-  --metadata startup-script="#!/bin/bash
-  	apt-get update && apt install -y apache2
-  	echo \"<!doctype html><html><head><title>My first web page</title></head><body><h1>Hello world!</h1></body></html>\" > /var/www/html/index.html
-  	ufw allow 80/tcp
-  	ufw allow 443/tcp
-  	ufw allow 22/tcp
-  	ufw allow \"Apache Full\"
-  	ufw enable
-  	snap install core; snap refresh core
-    snap install --classic certbot
-    ln -s /snap/bin/certbot /usr/bin/certbot
-    curl -k https://www.duckdns.org/update?domains=\"${DUCK_DNS}\"&token=\"${DUCK_TOKEN}\"&txt=\"${DUCK_TOKEN}\"&ip=
-    sudo certbot -n -d ${DUCK_DNS}.duckdns.org --agree-tos -m ${EMAIL} --apache
-    systemctl restart apache2
-  	"
+    gcloud compute instances create "${VM_NAME}" \
+      --zone=${ZONE} \
+      --machine-type=${MACHINE_TYPE} \
+      --image-family=${IMAGE_FAMILY} \
+      --image-project=${IMAGE_PROJECT} \
+      --boot-disk-type=${DISK_TYPE} \
+      --boot-disk-size=${DISK_SIZE} \
+      --tags=http-server,https-server,ssl-rule-tag \
+      --metadata startup-script="#!/bin/bash
+      	apt-get update && apt-get -y install apache2
+      	systemctl enable apache2
+      	systemctl start apache2
+      	ufw allow 80/tcp
+      	ufw allow 443/tcp
+      	ufw allow 22/tcp
+      	ufw allow \"Apache Full\"
+      	ufw enable
+      	echo '<!doctype html><html><head><title>My first web page</title></head><body><h1>this is a test page</h1></body></html>' > /var/www/html/index.html
+      	snap install core;
+      	snap refresh core
+        snap install --classic certbot
+        ln -s /snap/bin/certbot /usr/bin/certbot
+        certbot --non-interactive --apache -d ${DUCK_DNS}.duckdns.org --agree-tos --email $EMAIL
+        systemctl restart apache2
+        curl -k \"https://www.duckdns.org/update?domains=$DUCK_DNS&token=$DUCK_TOKEN&ip=\""
+
+#    ip_address=$(gcloud compute instances list --filter="name:${VM_NAME}" --format="table(EXTERNAL_IP)" | tail -n+2)
+#    echo -e "\n$ip_address\n"
+#    curl "https://www.duckdns.org/update?domains=elliothermans&token=a4f0c48c-a1c6-49d2-a1ff-1a6dc830a180&ip=$ip_address&verbose=true"
