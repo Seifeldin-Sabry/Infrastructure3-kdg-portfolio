@@ -27,9 +27,11 @@ function check_delete() {
   local db_srv=$5
   if [[ "$2" == "--delete" || "$2" == "-d" ]]; then
       echo "Deleting everything..."
-
-      echo "Deleting SQL instance"
-      gcloud sql instances delete "$db_srv" -q
+      # Delete the database
+      echo "Deleting database: $db_name"
+      gcloud sql databases delete "$db_name" --instance="$db_srv" -q
+#      Delete the database user
+      gcloud sql users delete "$db_user" --host=% --instance="$db_srv" -q
     	# delete all instances with wordpress in the name
       VMS_TO_DELETE=$(gcloud compute instances list --filter="name~wordpress" --format="value(name)")
       if [[ -n "$VMS_TO_DELETE" ]]; then
@@ -168,7 +170,7 @@ function f_authnw {
     vm_ip=$(gcloud compute instances describe "${VM_NAME}" \
         --format='value(networkInterfaces[0].accessConfigs[0].natIP)')
     if [[ -z ${current_authnw} || ${current_authnw} = "0.0.0.0/0" ]]; then
-        gcloud sql instances patch "${db_srv}" --authorized-networks="${vm_ip}" -q
+        gcloud sql instances patch "${db_srv}" --authorized-networks="${vm_ip},${IP_ADDRESS}" -q
     else
         current_authnw+=,${vm_ip}
         gcloud sql instances patch "${db_srv}" \
@@ -201,6 +203,7 @@ function setup_docker_file() {
 
 function create_db_user_if_not_exists() {
   echo "Setting up DB and user."
+  echo "Database Ip: ${db_ip}"
   mysql --host "${db_ip}" --user=root --password="${rootpass}" <<EOF
   DROP DATABASE IF EXISTS ${db_name};
   CREATE DATABASE ${db_name};
@@ -217,7 +220,7 @@ clear_and_recreate_dir
 get_parameters
 create_db_user_if_not_exists
 # This was necessary only for the first time to publish to my dockerhub
-setup_docker_file
+#setup_docker_file
 create_vm
 f_authnw
 
