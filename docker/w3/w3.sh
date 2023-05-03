@@ -5,10 +5,9 @@
 #- Author       : Seifeldin Sabry
 #- Commit       : wordpress environment on gcloud
 #- Descr        : wordpress environment on gcloud
-#- Usage        : w3.sh <DB_INSTANCE> | -h|--help
+#- Usage        : w3.sh <DB_INSTANCE> [-d | --delete] | -h|--help
 #-Run Instructions:
-#- 1- the script pushes the docker image to the container registry, make sure u change the DOCKER_IMAGE variable to your own <repo>/<image>:<tag>
-#- run the script with the db instance name as an argument
+#- run the script with the db instance name as an argument, to delete the instance add -d or --delete
 #------------------------------------------------------------------------------
 
 function check_help() {
@@ -26,13 +25,11 @@ function check_delete() {
   local db_user=$3
   local db_name=$4
   local db_srv=$5
-  echo "$1" "$db_user" "$db_name" "$db_srv"
   if [[ "$2" == "--delete" || "$2" == "-d" ]]; then
       echo "Deleting everything..."
-      # Delete the database
-      echo "Deleting database: $db_name"
-      gcloud sql databases delete "$db_name" --instance="$db_srv" -q
 
+      echo "Deleting SQL instance"
+      gcloud sql instances delete "$db_srv" -q
     	# delete all instances with wordpress in the name
       VMS_TO_DELETE=$(gcloud compute instances list --filter="name~wordpress" --format="value(name)")
       if [[ -n "$VMS_TO_DELETE" ]]; then
@@ -73,21 +70,30 @@ db_version=MYSQL_8_0_26
 db_user=wordpress
 db_name=wordpress
 
-check_delete "$1" "$2" "$db_user" "$db_name" "$db_srv"
-
-
 db_ip=$(gcloud sql instances describe "${db_srv}" --format='value(ipAddresses.ipAddress)')
 IP_ADDRESS="$(curl -4 icanhazip.com --silent)/32"
 msg="
 -----------------------------------------
 Run the installation script as follows:
-    $(basename "$0") <DB_INSTANCE> | -h|--help | -d|--delete
+    $(basename "$0") <DB_INSTANCE> [-d|--delete]
+    $(basename "$0") -h|--help
 
 Where:
 <DB_INSTANCE> : the name of the db server
 ------------------------------------------"
 
-[ $# -le 1 ] || [ $# -gt 2 ] && { echo "$msg"; exit 1; }
+if [[ $# -eq 0 ]]; then
+    echo "$msg"
+    exit 1
+elif [[ $# -eq 1 ]]; then
+  check_help "$1"
+elif [ $# -eq 2 ]; then
+  check_delete "$1" "$2" "$db_user" "$db_name" "$db_srv"
+else
+  echo "Too many arguments"
+  echo "$msg"
+  exit 1
+fi
 
 function create_vm() {
   gcloud compute instances create-with-container "${VM_NAME}" \
@@ -171,13 +177,11 @@ function f_authnw {
 }
 
 function create_dockerfile() {
-  if [[ ! -f "${TEMP_DIR}/Dockerfile" ]]; then
     cd "${TEMP_DIR}" || exit
     echo "
 FROM ubuntu:latest
 LABEL authors=\"seifeldinismail\"
 ENV TZ=Europe/Brussels
-USER root
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 php php-mysql \
     && rm -rf /var/www/html/*
 ADD ./wordpress.tar.gz /var/www
@@ -185,7 +189,14 @@ ENTRYPOINT [\"/usr/sbin/apache2ctl\", \"-D\", \"FOREGROUND\"]
 EXPOSE 80
 " > "Dockerfile"
     docker buildx build --push --platform linux/amd64,linux/arm64 -t ${DOCKER_IMAGE} .
-  fi
+}
+
+# This was necessary only for the first time to publish to my dockerhub
+function setup_docker_file() {
+  get_wordpress
+  set_wordpress_config
+  compress_wordpress
+  create_dockerfile
 }
 
 function create_db_user_if_not_exists() {
@@ -200,16 +211,16 @@ function create_db_user_if_not_exists() {
 EOF
 }
 
-check_help "$1"
-check_delete "$1"
 check_dependencies "gcloud" "mysql" "docker"
 f_checkdbinst
 clear_and_recreate_dir
-get_wordpress
 get_parameters
 create_db_user_if_not_exists
-set_wordpress_config
-compress_wordpress
-create_dockerfile
+# This was necessary only for the first time to publish to my dockerhub
+setup_docker_file
 create_vm
 f_authnw
+
+echo "----------------------------------------"
+echo "The wordpress installation is complete."
+echo "visit http://${vm_ip}/wp-admin/install.php to access your site."
